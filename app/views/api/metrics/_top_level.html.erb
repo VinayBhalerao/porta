@@ -1,4 +1,4 @@
 <%= render 'api/metrics/metric', :metric => metric %>
-<% binding.pry; if local_assigns[:include_backend_apis] %>
+<% if local_assigns[:include_backend_apis] %>
   <%= render partial: 'api/metrics/metric', collection: metric.children %>
 <% end %>

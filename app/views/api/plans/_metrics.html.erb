@@ -10,7 +10,7 @@
     <thead>
       <tr>
         <th colspan="<%= @plan.pricing_enabled? ? 4 : 3 %>">
-          Project Level
+          Product Level
           (<%= link_to 'Define method or metric', admin_service_metrics_path(@service), title: 'Define Methods & Metrics for this service' %>)
         </th>
         <th class="operations">
@@ -49,7 +49,7 @@
           </td>
         </tr>
       <% else -%>
-        <%= render partial: 'api/metrics/top_level', as: :metric, collection: @service.top_level_metrics %>
+        <%= render partial: 'api/metrics/top_level', as: :metric, collection: @service.top_level_metrics.where(system_name: 'hits') %>
       <% end -%>
     </tbody>
   </table>
@@ -58,7 +58,7 @@
     <thead>
       <tr>
         <th colspan="<%= @plan.pricing_enabled? ? 4 : 3 %>">
-          Backend Level
+          Backends
         </th>
         <th class="operations">
           Enabled
