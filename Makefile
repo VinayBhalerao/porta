@@ -164,14 +164,7 @@ bundle: gemfiles/prod/Gemfile Gemfile
 	cp Gemfile.lock gemfiles/prod/Gemfile.lock
 	BUNDLE_GEMFILE=gemfiles/prod/Gemfile bundle lock
 
-oracle-db-setup: ## Creates databases in Oracle
-oracle-db-setup: oracle-database
-	MASTER_PASSWORD=p USER_PASSWORD=p ORACLE_SYSTEM_PASSWORD=threescalepass NLS_LANG='AMERICAN_AMERICA.UTF8' DATABASE_URL="oracle-enhanced://rails:railspass@127.0.0.1:1521/systempdb" bundle exec rake db:drop db:create db:setup
-
-schema: ## Runs db schema migrations. Run this when you have changes to your database schema that you have added as new migrations.
-	bundle exec rake db:migrate db:schema:dump
-	MASTER_PASSWORD=p USER_PASSWORD=p ORACLE_SYSTEM_PASSWORD=threescalepass NLS_LANG='AMERICAN_AMERICA.UTF8' DATABASE_URL="oracle-enhanced://rails:railspass@127.0.0.1:1521/systempdb" bundle exec rake db:migrate db:schema:dump
-
+## Oracle database containerization
 oracle-database: ## Starts Oracle database container
 oracle-database: ORACLE_DATA_DIR ?= $(HOME)
 oracle-database:
@@ -186,6 +179,29 @@ oracle-database:
 		-v $(ORACLE_DATA_DIR)/oracle-database:/opt/oracle/oradata \
 		-v $(PWD)/script/oracle:/opt/oracle/scripts/setup \
 		quay.io/3scale/oracle:12.2.0.1-ee
+
+oracle-db-setup: ## Creates databases in Oracle
+oracle-db-setup: oracle-database
+	MASTER_PASSWORD=p USER_PASSWORD=p ORACLE_SYSTEM_PASSWORD=threescalepass NLS_LANG='AMERICAN_AMERICA.UTF8' DATABASE_URL="oracle-enhanced://rails:railspass@127.0.0.1:1521/systempdb" bundle exec rake db:drop db:create db:setup
+
+## Postgres database containerization
+postgres-database: ## Starts Postgres database container
+postgres-database:
+	[ "$(shell docker inspect -f '{{.State.Running}}' postgres-database 2>/dev/null)" = "true" ] || docker start postgres-database || docker run \
+		-p 5432:5432 \
+		--name postgres-database \
+		-e POSTGRES_USER=postgres \
+		-e POSTGRES_DB=threescale \
+		circleci/postgres:10.5-alpine
+
+postgres-db-setup: ## Creates databases in Postgres
+postgres-db-setup: postgres-database
+	DATABASE_URL="postgresql://postgres:@127.0.0.1:5433/threescale" bundle exec rake db:drop db:create db:setup
+
+schema: ## Runs db schema migrations. Run this when you have changes to your database schema that you have added as new migrations.
+	bundle exec rake db:migrate db:schema:dump
+	MASTER_PASSWORD=p USER_PASSWORD=p ORACLE_SYSTEM_PASSWORD=threescalepass NLS_LANG='AMERICAN_AMERICA.UTF8' DATABASE_URL="oracle-enhanced://rails:railspass@127.0.0.1:1521/systempdb" bundle exec rake db:migrate db:schema:dump
+	DATABASE_URL="postgresql://postgres:@127.0.0.1:5433/threescale" bundle exec rake db:migrate
 
 # Check http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## Print this help
